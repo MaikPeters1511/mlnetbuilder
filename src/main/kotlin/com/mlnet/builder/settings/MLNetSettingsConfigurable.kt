@@ -39,7 +39,7 @@ class MLNetSettingsConfigurable : BoundConfigurable("ML.NET Builder") {
             }
             row("mlnet CLI path:") {
                 textFieldWithBrowseButton(
-                    FileChooserDescriptorFactory.createSingleFileDescriptor().withTitle("Select mlnet CLI Executable")
+                    FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor().withTitle("Select mlnet CLI Executable")
                 )
                     .bindText(settings::mlnetCliPath)
                     .comment("Leave empty to use globally installed mlnet tool")

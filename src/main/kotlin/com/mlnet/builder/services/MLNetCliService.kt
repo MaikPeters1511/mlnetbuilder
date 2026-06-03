@@ -2,7 +2,7 @@ package com.mlnet.builder.services
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.OSProcessHandler
-import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
@@ -55,7 +55,7 @@ class MLNetCliService(private val project: Project) {
             currentProcess = handler
             val logs = mutableListOf<String>()
 
-            handler.addProcessListener(object : ProcessAdapter() {
+            handler.addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     val text = event.text
                     logs.add(text)
@@ -71,6 +71,8 @@ class MLNetCliService(private val project: Project) {
                         onError(RuntimeException("Training failed with exit code ${event.exitCode}"))
                     }
                 }
+                
+                override fun startNotified(event: ProcessEvent) {}
             })
 
             handler.startNotify()

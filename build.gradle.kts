@@ -11,6 +11,9 @@ version = providers.gradleProperty("pluginVersion").get()
 
 kotlin {
     jvmToolchain(providers.gradleProperty("javaVersion").get().toInt())
+    compilerOptions {
+        freeCompilerArgs.add("-Xjvm-default=all")
+    }
 }
 
 repositories {

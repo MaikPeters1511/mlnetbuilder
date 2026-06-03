@@ -147,10 +147,7 @@ class WizardPanel(private val project: Project) : JPanel(BorderLayout()) {
         val rightPanel = JPanel(BorderLayout()).apply {
             isOpaque = false
             add(headerPanel, BorderLayout.NORTH)
-            add(JBScrollPane(contentPanel).apply {
-                border = JBUI.Borders.empty()
-                viewportBorder = JBUI.Borders.empty()
-            }, BorderLayout.CENTER)
+            add(contentPanel, BorderLayout.CENTER)
             add(buttonPanel, BorderLayout.SOUTH)
         }
 

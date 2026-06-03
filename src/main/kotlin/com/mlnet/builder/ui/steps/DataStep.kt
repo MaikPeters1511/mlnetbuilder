@@ -24,14 +24,13 @@ class DataStep(private val project: Project, private val wizardState: WizardStat
             border = JBUI.Borders.empty(8)
             add(JBLabel("Data file:"), BorderLayout.WEST)
             
-            fileField.addBrowseFolderListener(
-                "Select Data File",
-                "Choose a CSV or TSV file for training",
-                project,
-                FileChooserDescriptorFactory.createSingleFileDescriptor().withFileFilter { 
+            val descriptor = FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                .withTitle("Select Data File")
+                .withDescription("Choose a CSV or TSV file for training")
+                .withFileFilter { 
                     it.extension == "csv" || it.extension == "tsv" || it.extension == "txt" 
                 }
-            )
+            fileField.addBrowseFolderListener(project, descriptor)
             fileField.textField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
                 override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = loadData()
                 override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = loadData()

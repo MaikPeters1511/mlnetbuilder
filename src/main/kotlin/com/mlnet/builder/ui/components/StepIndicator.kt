@@ -65,13 +65,13 @@ class StepIndicator(private val stepNames: List<String>) : JPanel() {
     init {
         isOpaque = true
         background = UIUtil.getPanelBackground()
-        preferredSize = JBUI.size(140, 400)
+        preferredSize = JBUI.size(150, 400)
         border = MatteBorder(0, 0, 0, JBUI.scale(1), borderLineColor)
     }
 
     override fun getPreferredSize(): Dimension {
         val height = topPadding * 2 + (stepNames.size - 1) * verticalSpacing + circleDiameter
-        val width = JBUI.scale(140)
+        val width = JBUI.scale(150)
         return Dimension(width, height.coerceAtLeast(JBUI.scale(400)))
     }
 
