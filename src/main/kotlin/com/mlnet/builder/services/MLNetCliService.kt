@@ -68,7 +68,12 @@ class MLNetCliService(private val project: Project) {
                         val result = parseTrainingResult(logs, config)
                         onComplete(result)
                     } else {
-                        onError(RuntimeException("Training failed with exit code ${event.exitCode}"))
+                        val fullLog = logs.joinToString("\n")
+                        if (fullLog.contains("Unrecognized command or argument '${config.scenario.cliCommand}'", ignoreCase = true)) {
+                            onError(RuntimeException("The scenario '${config.scenario.displayName}' is not supported by your installed mlnet CLI (e.g. not available on Apple Silicon or this CLI version)."))
+                        } else {
+                            onError(RuntimeException("Training failed with exit code ${event.exitCode}\nSee details in logs."))
+                        }
                     }
                 }
                 

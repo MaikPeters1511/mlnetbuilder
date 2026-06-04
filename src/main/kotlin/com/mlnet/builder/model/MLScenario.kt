@@ -142,4 +142,18 @@ enum class MLScenario(
         fun fromDisplayName(name: String): MLScenario? =
             entries.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
     }
+    
+    /**
+     * Determines whether this scenario is supported by the underlying ML.NET CLI
+     * on the current host operating system and architecture.
+     */
+    fun isSupportedOnCurrentPlatform(): Boolean {
+        // The ML.NET CLI currently omits these commands on Apple Silicon (ARM64)
+        // due to missing native dependencies (like TensorFlow/ONNX).
+        val isMacArm = com.intellij.openapi.util.SystemInfo.isMac && com.intellij.util.system.CpuArch.isArm64()
+        if (isMacArm) {
+            return this == CLASSIFICATION || this == REGRESSION || this == RECOMMENDATION
+        }
+        return true
+    }
 }
