@@ -21,7 +21,6 @@ class TrainingStep(private val project: Project, private val wizardState: Wizard
     private val progressPanelComponent = TrainingProgressPanel()
     
     private val timeSpinner = JSpinner(SpinnerNumberModel(30, 10, 3600, 10))
-    private val gpuCheckbox = JCheckBox("Use GPU")
     private val startBtn = JButton("Start Training")
     
     private val cardLayout = CardLayout()
@@ -32,14 +31,10 @@ class TrainingStep(private val project: Project, private val wizardState: Wizard
         configPanel.border = JBUI.Borders.empty(16)
         
         val timePanel = JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(8), 0)).apply {
+            name = "timePanel"
             maximumSize = java.awt.Dimension(Int.MAX_VALUE, JBUI.scale(30))
             add(JBLabel("Time to train (seconds):"))
             add(timeSpinner)
-        }
-        
-        val gpuPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
-            maximumSize = java.awt.Dimension(Int.MAX_VALUE, JBUI.scale(30))
-            add(gpuCheckbox)
         }
         
         val btnPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
@@ -51,7 +46,6 @@ class TrainingStep(private val project: Project, private val wizardState: Wizard
         }
         
         configPanel.add(timePanel)
-        configPanel.add(gpuPanel)
         configPanel.add(btnPanel)
         configPanel.add(Box.createVerticalGlue())
         
@@ -68,7 +62,7 @@ class TrainingStep(private val project: Project, private val wizardState: Wizard
             labelColumn = wizardState.labelColumn!!,
             featureColumns = wizardState.featureColumns,
             trainingTimeSeconds = timeSpinner.value as Int,
-            useGpu = gpuCheckbox.isSelected,
+            useGpu = wizardState.useGpu,
             outputDirectory = project.basePath ?: "",
             modelName = wizardState.modelName
         )
@@ -107,6 +101,12 @@ class TrainingStep(private val project: Project, private val wizardState: Wizard
     override fun getStepDescription(): String = "Configure and run AutoML to find the best model."
     override fun isStepValid(): Boolean = wizardState.trainingResult != null
     override fun onEnter() {
+        val isImageClass = wizardState.scenario == com.mlnet.builder.model.MLScenario.IMAGE_CLASSIFICATION
+        
+        // Hide time spinner for Image Classification (as it trains until complete)
+        val timePanel = configPanel.components.find { it.name == "timePanel" }
+        timePanel?.isVisible = !isImageClass
+
         if (wizardState.trainingResult != null) {
             cardLayout.show(container, "PROGRESS")
         } else {

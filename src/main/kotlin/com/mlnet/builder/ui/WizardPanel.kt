@@ -18,6 +18,7 @@ import javax.swing.*
  */
 data class WizardState(
     var scenario: MLScenario? = null,
+    var environment: String = "Local (CPU)",
     var dataFilePath: String? = null,
     var delimiter: Char = ',',
     var labelColumn: String? = null,
@@ -42,6 +43,7 @@ class WizardPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private val stepNames = listOf(
         "Scenario",
+        "Environment",
         "Data",
         "Train",
         "Evaluate",
@@ -53,6 +55,7 @@ class WizardPanel(private val project: Project) : JPanel(BorderLayout()) {
     private val steps: List<JPanel> by lazy {
         listOf(
             ScenarioStep(project, wizardState),
+            EnvironmentStep(project, wizardState),
             DataStep(project, wizardState),
             TrainingStep(project, wizardState),
             EvaluateStep(project, wizardState),

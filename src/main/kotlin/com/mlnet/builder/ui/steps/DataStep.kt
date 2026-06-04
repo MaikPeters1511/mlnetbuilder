@@ -15,15 +15,24 @@ import javax.swing.*
 class DataStep(private val project: Project, private val wizardState: WizardState) : JPanel(BorderLayout()), WizardStepPanel {
 
     private val dataService = DataService.getInstance(project)
+    
+    // Tabular Data UI
     private val fileField = TextFieldWithBrowseButton()
-    private val dataPreviewTable = DataPreviewTable()
     private val labelColumnCombo = JComboBox<String>()
     
+    // Image Data UI
+    private val folderField = TextFieldWithBrowseButton()
+    
+    private val dataPreviewTable = DataPreviewTable()
+    
+    private val topCards = JPanel(java.awt.CardLayout())
+    private val bottomCards = JPanel(java.awt.CardLayout())
+    
     init {
-        val topPanel = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+        // --- Tabular Mode Setup ---
+        val tabularTopPanel = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
             border = JBUI.Borders.empty(8)
             add(JBLabel("Data file:"), BorderLayout.WEST)
-            
             val descriptor = FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
                 .withTitle("Select Data File")
                 .withDescription("Choose a CSV or TSV file for training")
@@ -39,20 +48,46 @@ class DataStep(private val project: Project, private val wizardState: WizardStat
             add(fileField, BorderLayout.CENTER)
         }
         
-        val bottomPanel = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+        val tabularBottomPanel = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
             border = JBUI.Borders.empty(8)
             add(JBLabel("Label column (to predict):"), BorderLayout.WEST)
             add(labelColumnCombo, BorderLayout.CENTER)
-            
             labelColumnCombo.addActionListener {
                 wizardState.labelColumn = labelColumnCombo.selectedItem as? String
                 dataPreviewTable.setLabelColumn(wizardState.labelColumn)
             }
         }
+
+        // --- Image Mode Setup ---
+        val imageTopPanel = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+            border = JBUI.Borders.empty(8)
+            add(JBLabel("Image folder:"), BorderLayout.WEST)
+            val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                .withTitle("Select Image Folder")
+                .withDescription("Choose a folder containing subfolders for each category")
+            folderField.addBrowseFolderListener(project, descriptor)
+            folderField.textField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
+                override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = loadImageData()
+                override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = loadImageData()
+                override fun changedUpdate(e: javax.swing.event.DocumentEvent?) = loadImageData()
+            })
+            add(folderField, BorderLayout.CENTER)
+        }
         
-        add(topPanel, BorderLayout.NORTH)
+        val imageBottomPanel = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+            border = JBUI.Borders.empty(8)
+            add(JBLabel("Labels are determined from subfolder names."), BorderLayout.WEST)
+        }
+        
+        topCards.add(tabularTopPanel, "TABULAR")
+        topCards.add(imageTopPanel, "IMAGE")
+        
+        bottomCards.add(tabularBottomPanel, "TABULAR")
+        bottomCards.add(imageBottomPanel, "IMAGE")
+        
+        add(topCards, BorderLayout.NORTH)
         add(dataPreviewTable, BorderLayout.CENTER)
-        add(bottomPanel, BorderLayout.SOUTH)
+        add(bottomCards, BorderLayout.SOUTH)
     }
 
     private fun loadData() {
@@ -81,13 +116,53 @@ class DataStep(private val project: Project, private val wizardState: WizardStat
         }
     }
 
+    private fun loadImageData() {
+        val path = folderField.text
+        if (path.isNotBlank()) {
+            wizardState.dataFilePath = path
+            // For image classification, labels are the folders
+            wizardState.labelColumn = "Label"
+            wizardState.featureColumns = mutableListOf("ImageSource")
+            
+            // Show a simple preview indicating folder is selected
+            val folder = java.io.File(path)
+            if (folder.exists() && folder.isDirectory) {
+                val subdirs = folder.listFiles { it -> it.isDirectory } ?: emptyArray()
+                val labels = subdirs.map { it.name }
+                val rows = subdirs.take(10).map { dir ->
+                    val imageCount = dir.listFiles { it -> it.isFile && (it.name.endsWith(".jpg", true) || it.name.endsWith(".png", true)) }?.size ?: 0
+                    listOf(dir.name, "$imageCount images")
+                }
+                dataPreviewTable.setData(listOf("Label (Folder Name)", "Contents"), rows, null)
+                dataPreviewTable.setTotalRowCount(labels.size)
+            }
+        }
+    }
+
     override fun getStepTitle(): String = "Data"
     override fun getStepDescription(): String = "Select the dataset to use for training."
     override fun isStepValid(): Boolean = !wizardState.dataFilePath.isNullOrBlank() && !wizardState.labelColumn.isNullOrBlank()
+    
     override fun onEnter() {
-        if (fileField.text != wizardState.dataFilePath) {
-            fileField.text = wizardState.dataFilePath ?: ""
+        val isImageClass = wizardState.scenario == com.mlnet.builder.model.MLScenario.IMAGE_CLASSIFICATION
+        val topLayout = topCards.layout as java.awt.CardLayout
+        val bottomLayout = bottomCards.layout as java.awt.CardLayout
+        
+        if (isImageClass) {
+            topLayout.show(topCards, "IMAGE")
+            bottomLayout.show(bottomCards, "IMAGE")
+            if (folderField.text != wizardState.dataFilePath) {
+                folderField.text = wizardState.dataFilePath ?: ""
+            }
+            wizardState.labelColumn = "Label" // Default for image classification
+        } else {
+            topLayout.show(topCards, "TABULAR")
+            bottomLayout.show(bottomCards, "TABULAR")
+            if (fileField.text != wizardState.dataFilePath) {
+                fileField.text = wizardState.dataFilePath ?: ""
+            }
         }
     }
+    
     override fun onLeave() {}
 }
